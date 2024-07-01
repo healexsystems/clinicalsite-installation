@@ -68,6 +68,7 @@ version: "3.7"
 
 volumes:
   db:
+  dbsocket:
 
 services:
   clinicalsite:
@@ -79,6 +80,7 @@ services:
       - 8080:5000
     volumes:
       - ./config.ini:/app/config.ini:ro
+      - dbsocket:/var/run/postgresql     
 
   db:
     image: postgres:14-bookworm
@@ -89,7 +91,8 @@ services:
       POSTGRES_PASSWORD: example
     volumes:
       - db:/var/lib/postgresql/data
-
+      - dbsocket:/var/run/postgresql      
+      - ./init.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
 ```
 
 # Konfiguration
@@ -98,20 +101,18 @@ Die Anwendung wird über die Datei `config.ini` konfiguriert.
 
 | Umgebungsvariable          | Abschnitt    | Beschreibung | Standard-Wert | Beispiel
 |----------------------------|--------------|--------------|---------------|----------
-| disable_template_reload | run | | Wenn eingeschaltet, werden die Templates nur beim Start der Anwendung eingelesen, nicht mehr im laufenden Betrieb. Sollte in Produktion eingeschaltet sein.| 0 | 0
 | have_reverse_proxy         | run          | Gibt an, ob die Anwendung hinter einem Reverse-Proxy betrieben wird (sollte in Produktion immer der Fall sein) | 0 | 0
 | use_ssl                    | run          | Wenn eingeschaltet, erzwingt die Anwendung die Verwendung von HTTPS für URLs und Cookies | 1 | 1
 | readonly                   | run          | Wenn eingeschaltet, überspringt die Anwendung beim Start Änderungen an den Daten in der Datenbank.
-| mock_proxy_host            | run          | Wenn gesetzt, läuft die Anwendung im Proxy-Modus und kann nur unter dem angegebenen Hostnamen angesprochen werden |    | clinicalsite.org
 | title                      | app          | Titel der Anwendung, u.a. in jedem Seitentitel. | Healex ClinicalSite | ClinicalTest
 | instance_badge             | app          | Vordergrund- und Hintergrundfarbe sowie Beschriftung der Instanz-Plakette. Sie wird oben rechts im Layout der Anwendung dargestellt, um verschiedene Installationen optisch voneinander unterscheidbar zu machen. | #49b #fcfffc Docker
-| support                    | app          | Haupt-Support-EMail-Adresse des Systems | support@clinicalsite.org | support@example.com
+| support                    | app          | Haupt-Support-E-Mail-Adresse des Systems | support@clinicalsite.org | support@example.com
 | superusers                 | app          | Durch Leerzeichen getrennte Personen-IDs der Benutzer mit Systemverwaltungszugriff | 1 | 1
 | superclient                | app          | Client-ID eines externen Systems, das Zugriff auf alle Reports bekommt | 1 | 1
 | supertenant                | app          | Mandanten-ID des Mandanten, dessen Hilfetexte für Formularfelder in allen anderen Mandanten angezeigt werden | 1 | 1
-| secret                     | signatures   | HMAC-Secret zum Signieren von Cookies und Links (z.B. in Einrichtungsmails)
+| secret                     | signatures   | HMAC-Secret zum Signieren von Cookies und Links (z.B. in Einrichtungsmails) | | 88cd2108b5347d9
 | timeout                    | signatures   | Dauer der Gültigkeit von signierten Cookies und Links in Stunden | 72
-| api_key                    | Model::SMS   | API-Key für die SMS-API
+| api_key                    | Model::SMS   | API-Key für die SMS-API | | f1Qery7ShwajQzS5y7uD
 | dry_run                    | Model::SMS   | Entspricht dem `debug`-Parameter der SMS-Versand-API: der API-Call wird durchgeführt, simuliert den SMS-Versand aber nur.
 | sender_name                | Model::SMS   | Absendernummer bzw. -name. Max. 16 Ziffern bzw. 11 Zeichen | ClnicalSite
 | sender                     | View::Email  | Envelope-Sender, der in vom System versandten EMails angegeben wird | support@clinicalsite.org | support@example.com
@@ -126,8 +127,6 @@ mock_proxy_host =
 
 [uploads]
 dir = /app/data/uploads
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [app]
 instance_badge = #49b #fcfffc Docker
@@ -148,6 +147,7 @@ LC_CTYPE   "de_DE.UTF-8"
 Für das Docker-Image kann dies beispielsweise über ein Dockerfile konfiguriert werden:
 
 ```shell
+FROM postgres:14-bookworm
 RUN localedef -i de_DE -c -f UTF-8 -A /usr/share/locale/locale.alias de_DE.UTF-8
 ENV LANG de_DE.utf8
 ```
