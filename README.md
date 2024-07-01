@@ -1,20 +1,20 @@
 # ClinicalSite
 
-ClinicalSite von Healex GmbH ist ein Informations- und Verwaltungssystem für organisatorische Daten klinischer Studien zum Zweck der Unterstützung von Sponsoren und Prüfstellen bei der Durchführung qualitativ hochwertiger klinischer Forschung an Menschen und bei der Erfüllung gesetzlicher Organisationsanforderungen.
+ClinicalSite von Healex GmbH ist ein Informations- und Verwaltungssystem für organisatorische Daten klinischer Studien. Es unterstützt Sponsoren und Prüfstellen bei der Durchführung qualitativ hochwertiger klinischer Forschung, unter Erfüllung gesetzlicher Organisationsanforderungen.
 
-ClinicalSite dient der digitalen Vernetzung aller an einer Studie beteiligten Parteien indem die für eine Studie relevanten administrativen Daten zentral im System abgelegt werden damit sie dort von mehreren berechtigten Personen eingesehen und bearbeitet werden können („Cooperative Peer Reviewing“).
+ClinicalSite dient der digitalen Vernetzung aller an einer Studie beteiligten Parteien, indem die für eine Studie relevanten administrativen Daten zentral im System abgelegt werden und dort von mehreren berechtigten Personen eingesehen und bearbeitet werden können („Cooperative Peer Reviewing“).
 
 - [Systemanforderungen](#systemanforderungen)
-    * [Umgebungseinrichtung](#Umgebungseinrichtung)
+    * [Umgebungseinrichtung](#umgebungseinrichtung)
     * [Docker-Installation](#docker-installation)
-    * [Lizenzierung und Download des Docker-Images](#Lizenzierung-und-Download-des-Docker-Images)
+    * [Lizenzierung und Download des Docker-Images](#lizenzierung-und-download-des-docker-images)
     * [Client-seitige Anforderungen](#client-seitige-anforderungen)
-- [Erste Schritte](#Erste-Schritte)
-- [Datenbank-Konfiguration](#Datenbank-konfiguration)
-- [SSL über Proxy Server](#SSL-über-Proxy-Server)
-- [Standard-Login](#Standard-Login)
-- [Container-Shell](#Container-Shell)
-- [Anzeige von Container-Logs](#Anzeige-von-Container-Logs)
+- [Erste Schritte](#erste-schritte)
+- [Datenbank-Konfiguration](#datenbank-konfiguration)
+- [SSL über Proxy Server](#ssl-über-proxy-server)
+- [Standard-Login](#standard-login)
+- [Container-Shell](#container-shell)
+- [Anzeige von Container-Logs](#anzeige-von-container-logs)
 
 # Systemanforderungen
 
@@ -24,16 +24,15 @@ ClinicalSite ist containerisiert und lässt sich mit einer OCI-kompatiblen Runti
 
 ## Docker-Installation
 
-Hierfür wird eine [Docker-Umgebung](https://www.docker.com/products/container-runtime) benötigt.
-Mit dieser können die Hosts (unabhängig davon ob real oder virtual, lokal oder remote) ausgeführt und angesteuert werden.
+Hierfür wird eine Docker Umgebung benötigt (https://www.docker.com/products/container-runtime). 
+Mit dieser können die Hosts (unabhängig davon, ob real, virtuell, lokal oder remote) ausgeführt und angesteuert werden.
 
 Installieren Sie hierfür die [Docker-Engine](https://docs.docker.com/get-docker/).
 
 ## Lizenzierung und Download des Docker-Images
 
-Es wird ein Zugang zum privaten Healex Docker-Repository benötigt.
-Wenden Sie sich hierfür an <support@healex.systems> um die Lizenzbedingungen zu besprechen.
-Sobald die Lizenz eingerichtet ist erhalten Sie ihren Kontonamen, mit welchem der Zugriff zum Docker-Repository ermöglicht wird.
+Es wird ein Zugang zum privaten Healex Docker Repository benötigt.  
+Wenden Sie sich hierfür an <support@healex.systems> um die Lizenzbedingungen zu besprechen. Sobald die Lizenz eingerichtet ist, erhalten Sie ihren Kontonamen, mit welchem der Zugriff zum Docker Repository ermöglicht wird.
 
 ## Hardware-Anforderungen
 
@@ -41,18 +40,19 @@ Sobald die Lizenz eingerichtet ist erhalten Sie ihren Kontonamen, mit welchem de
 |----------------------------|---------|--------|---------------------
 | ClinicalSite               | 2       | 4 GB   | 10 GB
 
-Diese Mindestwerte eignen sich für Tests, Prototypen, Pre-Prod und erfahrungsgemäß für den anfänglichen Betrieb der Produktionsumgebung.
-Abhängig von der Entwicklung der realen Nutzung können sich hiervon abweichende Systemanforderungen ergeben.
+Diese Mindestwerte eignen sich für Tests, Prototypen, Pre-PROD und erfahrungsgemäß für den anfänglichen Betrieb der Produktionsumgebung. 
+Abhängig von der Entwicklung der realen Nutzung können sich hiervon abweichende Systemanforderungen ergeben. 
 Die Hardwareanforderungen sollten vom hauseigenen Betrieb überwacht und angepasst werden.
 
 ## Client-seitige Anforderungen
 
   - Keine speziellen Hardwareanforderungen notwendig
-  - Aktivierung von JavaScript und Cookies (i.d.R. Browser-Standardeinstellungen)
-  - Standard-konformer Browser. Aktuelle (nicht älter als 1 Jahr) Versionen des
+  - Aktivierung von JavaScript und Cookies (i.d.R. Browser Standardeinstellungen)
+  - Standardkonformer Browser: aktuelle Versionen (nicht älter als 1 Jahr) des
       * Google Chrome
       * Mozilla Firefox
       * Microsoft Edge
+      * Safari
 
 # Erste Schritte
 
@@ -94,13 +94,15 @@ services:
 
 # Konfiguration
 
-Die der Anwendung wird über die Datei `config.ini` konfiguriert.
+Die Anwendung wird über die Datei `config.ini` konfiguriert.
 
 | Umgebungsvariable          | Abschnitt    | Beschreibung | Standard-Wert | Beispiel
 |----------------------------|--------------|--------------|---------------|----------
+| disable_template_reload | run | | Wenn eingeschaltet, werden die Templates nur beim Start der Anwendung eingelesen, nicht mehr im laufenden Betrieb. Sollte in Produktion eingeschaltet sein.| 0 | 0
 | have_reverse_proxy         | run          | Gibt an, ob die Anwendung hinter einem Reverse-Proxy betrieben wird (sollte in Produktion immer der Fall sein) | 0 | 0
 | use_ssl                    | run          | Wenn eingeschaltet, erzwingt die Anwendung die Verwendung von HTTPS für URLs und Cookies | 1 | 1
 | readonly                   | run          | Wenn eingeschaltet, überspringt die Anwendung beim Start Änderungen an den Daten in der Datenbank.
+| mock_proxy_host            | run          | Wenn gesetzt, läuft die Anwendung im Proxy-Modus und kann nur unter dem angegebenen Hostnamen angesprochen werden |    | clinicalsite.org
 | title                      | app          | Titel der Anwendung, u.a. in jedem Seitentitel. | Healex ClinicalSite | ClinicalTest
 | instance_badge             | app          | Vordergrund- und Hintergrundfarbe sowie Beschriftung der Instanz-Plakette. Sie wird oben rechts im Layout der Anwendung dargestellt, um verschiedene Installationen optisch voneinander unterscheidbar zu machen. | #49b #fcfffc Docker
 | support                    | app          | Haupt-Support-EMail-Adresse des Systems | support@clinicalsite.org | support@example.com
@@ -113,6 +115,27 @@ Die der Anwendung wird über die Datei `config.ini` konfiguriert.
 | dry_run                    | Model::SMS   | Entspricht dem `debug`-Parameter der SMS-Versand-API: der API-Call wird durchgeführt, simuliert den SMS-Versand aber nur.
 | sender_name                | Model::SMS   | Absendernummer bzw. -name. Max. 16 Ziffern bzw. 11 Zeichen | ClnicalSite
 | sender                     | View::Email  | Envelope-Sender, der in vom System versandten EMails angegeben wird | support@clinicalsite.org | support@example.com
+
+
+Template für `config.ini`:
+
+```shell
+[run]
+disable_template_reload = 1
+mock_proxy_host =
+
+[uploads]
+dir = /app/data/uploads
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[app]
+instance_badge = #49b #fcfffc Docker
+
+[run]
+use_ssl = 0
+have_reverse_proxy = 0
+```
 
 # Datenbank-Konfiguration
 
