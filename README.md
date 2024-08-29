@@ -69,11 +69,13 @@ version: "3.7"
 volumes:
   db:
   dbsocket:
+  uploads:
 
 services:
   clinicalsite:
     image: healexsystems/clinicalsite:latest
     container_name: clinicalsite
+    init: true
     depends_on:
       - db
     ports:
@@ -81,6 +83,7 @@ services:
     volumes:
       - ./config.ini:/app/config.ini:ro
       - dbsocket:/var/run/postgresql     
+      - uploads:/uploads
 
   db:
     image: postgres:14-bookworm
@@ -116,7 +119,8 @@ Die Anwendung wird über die Datei `config.ini` konfiguriert.
 | dry_run                    | Model::SMS   | Entspricht dem `debug`-Parameter der SMS-Versand-API: der API-Call wird durchgeführt, simuliert den SMS-Versand aber nur.
 | sender_name                | Model::SMS   | Absendernummer bzw. -name. Max. 16 Ziffern bzw. 11 Zeichen | ClnicalSite
 | sender                     | View::Email  | Envelope-Sender, der in vom System versandten EMails angegeben wird | support@clinicalsite.org | support@example.com
-
+| dir                        | uploads      | Pfad zum Upload Ordner innerhalb des Containers | /tmp | /uploads 
+| perm                       | uploads      | Ordner-Zugriffsberechtigung | | 640
 
 Template für `config.ini`:
 
@@ -126,7 +130,8 @@ disable_template_reload = 1
 mock_proxy_host =
 
 [uploads]
-dir = /app/data/uploads
+dir = /uploads
+perm = 640
 
 [app]
 instance_badge = #49b #fcfffc Docker
