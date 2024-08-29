@@ -100,6 +100,7 @@ services:
 
 # Konfiguration
 
+## Umgebungsvariablen
 Die Anwendung wird über die Datei `config.ini` konfiguriert.
 
 | Umgebungsvariable          | Abschnitt    | Beschreibung | Standard-Wert | Beispiel
@@ -121,8 +122,15 @@ Die Anwendung wird über die Datei `config.ini` konfiguriert.
 | sender                     | View::Email  | Envelope-Sender, der in vom System versandten EMails angegeben wird | support@clinicalsite.org | support@example.com
 | dir                        | uploads      | Pfad zum Upload Ordner innerhalb des Containers | /tmp | /uploads 
 | perm                       | uploads      | Ordner-Zugriffsberechtigung | | 640
+| CLASS                      | View::Email transport| Gibt an, welches Email::Sender::Transport-Modul geladen werden soll | DevNull | SMTP
+| host                       | View::Email transport| Adresse des E-Mail Servers | | smtp.office365.com
+| ssl                        | View::Email transport| Verbindungstyp / Verschlüsselung  | | starttls
+| port                       | View::Email transport| Verbindungs-Port; Standart ist 25 für non-SSL, 465 für 'ssl', 587 für 'starttls' | 25 | 587
+| timeout                    | View::Email transport| Maximale Teit in Sekunden auf eine Serverrückmeldung  | 120 | 3
+| sasl_username              | View::Email transport| Benutzername des E-Mail Kontos zur authentifizierung | | support@example.com
+| sasl_password              | View::Email transport| Passwort welches für die Authentifizierung benötigt wird; wird benötigt, falls <sasl_username> gesetzt ist |  | password
 
-Example Template für `config.ini`:
+Beispiel Template für `config.ini`:
 
 ```shell
 [run]
@@ -136,10 +144,23 @@ perm = 640
 [app]
 instance_badge = #49b #fcfffc Docker
 title    = Healex ClinicalSite
+support  = support@example.com
 
 [run]
 use_ssl = 0
 have_reverse_proxy = 0
+
+[View::Email]
+sender = support@example.com
+
+[View::Email transport]
+CLASS   = SMTP
+host    = smtp.example.com
+ssl     = starttls
+port    = 587
+timeout = 3
+sasl_username = support@example.com
+sasl_password = password
 ```
 
 # SSL über Proxy-Server
