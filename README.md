@@ -122,7 +122,7 @@ Die Anwendung wird über die Datei `config.ini` konfiguriert.
 | dir                        | uploads      | Pfad zum Upload Ordner innerhalb des Containers | /tmp | /uploads 
 | perm                       | uploads      | Ordner-Zugriffsberechtigung | | 640
 
-Template für `config.ini`:
+Example Template für `config.ini`:
 
 ```shell
 [run]
@@ -135,6 +135,7 @@ perm = 640
 
 [app]
 instance_badge = #49b #fcfffc Docker
+title    = Healex ClinicalSite
 
 [run]
 use_ssl = 0
