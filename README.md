@@ -86,7 +86,7 @@ services:
       - uploads:/uploads
 
   db:
-    image: postgres:14-bookworm
+    image: postgres:15-alpine
     container_name: cs-db
     environment:
       POSTGRES_DB: cs
@@ -140,22 +140,6 @@ title    = Healex ClinicalSite
 [run]
 use_ssl = 0
 have_reverse_proxy = 0
-```
-
-# Datenbank-Konfiguration
-
-Beim Initialisieren der Datenbank werden standardmäßig folgende [lokalen Einstellungen](https://www.postgresql.org/docs/current/locale.html#LOCALE) verwendet und müssen von der Datenbank unterstützt werden:
-
-```shell
-LC_COLLATE "de_DE.UTF-8"
-LC_CTYPE   "de_DE.UTF-8"
-```
-Für das Docker-Image kann dies beispielsweise über ein Dockerfile konfiguriert werden:
-
-```shell
-FROM postgres:14-bookworm
-RUN localedef -i de_DE -c -f UTF-8 -A /usr/share/locale/locale.alias de_DE.UTF-8
-ENV LANG de_DE.utf8
 ```
 
 # SSL über Proxy-Server
