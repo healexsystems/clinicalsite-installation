@@ -4,17 +4,20 @@ ClinicalSite von Healex GmbH ist ein Informations- und Verwaltungssystem für or
 
 ClinicalSite dient der digitalen Vernetzung aller an einer Studie beteiligten Parteien, indem die für eine Studie relevanten administrativen Daten zentral im System abgelegt werden und dort von mehreren berechtigten Personen eingesehen und bearbeitet werden können („Cooperative Peer Reviewing“).
 
+- [ClinicalSite](#clinicalsite)
 - [Systemanforderungen](#systemanforderungen)
-    * [Umgebungseinrichtung](#umgebungseinrichtung)
-    * [Docker-Installation](#docker-installation)
-    * [Lizenzierung und Download des Docker-Images](#lizenzierung-und-download-des-docker-images)
-    * [Client-seitige Anforderungen](#client-seitige-anforderungen)
+  - [Umgebungseinrichtung](#umgebungseinrichtung)
+  - [Docker-Installation](#docker-installation)
+  - [Lizenzierung und Download des Docker-Images](#lizenzierung-und-download-des-docker-images)
+  - [Hardware-Anforderungen](#hardware-anforderungen)
+  - [Client-seitige Anforderungen](#client-seitige-anforderungen)
 - [Erste Schritte](#erste-schritte)
-- [Datenbank-Konfiguration](#datenbank-konfiguration)
-- [SSL über Proxy Server](#ssl-über-proxy-server)
+- [Konfiguration](#konfiguration)
+- [SSL über Proxy-Server](#ssl-über-proxy-server)
 - [Standard-Login](#standard-login)
 - [Container-Shell](#container-shell)
 - [Anzeige von Container-Logs](#anzeige-von-container-logs)
+- [Mandanten-Konfiguration](#mandanten-konfiguration)
 
 # Systemanforderungen
 
@@ -187,3 +190,12 @@ docker exec -it docker Container-ID /bin/bash
 ```shell
 docker logs Container-ID
 ```
+
+# Mandanten-Konfiguration
+Voraussetzung: E-Mailversand wurde eingerichtet
+1. Mit dem Kunden besprechen, wer die primären Ansprechpartner beim Kunden sind
+2. (Eltern)Organisationseinheit des Kunden erstellen
+3. Ansprechpartner als Personen erstellen
+4. Einladungs-E-Mails an die Personen verschicken (Zugänge anlegen)
+5. Warten bis die Personen ihre Zugänge aktiviert haben
+6. Personen unter '/tenant/x/edit' als Mandanten-Administratoren hinzufügen
