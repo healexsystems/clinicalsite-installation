@@ -17,7 +17,7 @@ ClinicalSite dient der digitalen Vernetzung aller an einer Studie beteiligten Pa
 - [Standard-Login](#standard-login)
 - [Container-Shell](#container-shell)
 - [Anzeige von Container-Logs](#anzeige-von-container-logs)
-- [Mandanten-Konfiguration](#mandanten-konfiguration)
+- [Übergabe an Key-User](#übergabe-an-key-user)
 
 # Systemanforderungen
 
@@ -191,11 +191,10 @@ docker exec -it docker Container-ID /bin/bash
 docker logs Container-ID
 ```
 
-# Mandanten-Konfiguration
+# Übergabe an Key-User
 Voraussetzung: E-Mailversand wurde eingerichtet
-1. Mit dem Kunden besprechen, wer die primären Ansprechpartner beim Kunden sind
-2. (Eltern)Organisationseinheit des Kunden erstellen
-3. Ansprechpartner als Personen erstellen
-4. Einladungs-E-Mails an die Personen verschicken (Zugänge anlegen)
-5. Warten bis die Personen ihre Zugänge aktiviert haben
-6. Personen unter '/tenant/x/edit' als Mandanten-Administratoren hinzufügen
+1. (Eltern-)Organisationseinheit erstellen (ohne Org.-Einheit können keine Zugänge vergeben werden)
+3. Key-User als Affilierte in der Org.-Einheit erstellen
+4. Einladungs-E-Mails an die Key-User verschicken (Zugänge anlegen)
+5. Warten bis die Key-User ihre Zugänge aktiviert haben
+6. Key-User unter '/tenant/{tenantID}/edit' als Mandanten-Administratoren hinzufügen
