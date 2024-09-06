@@ -6,13 +6,16 @@ ClinicalSite dient der digitalen Vernetzung aller an einer Studie beteiligten Pa
 
 - [ClinicalSite](#clinicalsite)
 - [Systemanforderungen](#systemanforderungen)
-    * [Umgebungseinrichtung](#umgebungseinrichtung)
-    * [Docker-Installation](#docker-installation)
-    * [Lizenzierung und Download des Docker-Images](#lizenzierung-und-download-des-docker-images)
-    * [Client-seitige Anforderungen](#client-seitige-anforderungen)
+  - [Umgebungseinrichtung](#umgebungseinrichtung)
+  - [Docker-Installation](#docker-installation)
+  - [Lizenzierung und Download des Docker-Images](#lizenzierung-und-download-des-docker-images)
+  - [Hardware-Anforderungen](#hardware-anforderungen)
+  - [Client-seitige Anforderungen](#client-seitige-anforderungen)
 - [Erste Schritte](#erste-schritte)
-- [Datenbank-Konfiguration](#datenbank-konfiguration)
-- [SSL über Proxy Server](#ssl-über-proxy-server)
+- [Konfiguration](#konfiguration)
+  - [Umgebungsvariablen](#umgebungsvariablen)
+  - [Zwei-Faktor-Authentifizierung](#2fa)
+- [SSL über Proxy-Server](#ssl-über-proxy-server)
 - [Standard-Login](#standard-login)
 - [Container-Shell](#container-shell)
 - [Anzeige von Container-Logs](#anzeige-von-container-logs)
@@ -165,9 +168,28 @@ sasl_username = support@example.com
 sasl_password = password
 ```
 
+## 2FA
+
+Als Methode für eine Zwei-Faktor-Authentifizierung kann optional ein SMS Versand über [seven.io](https://www.seven.io) eingerichtet werden.
+Hierfür wird in den Entwicklereinstellungen von seven.io eine neue Anwendung und ein neuer API-Schlüssel erstellt. Dieser ermöglicht einen Zugriff auf die HTTP-API von seven.io.
+
+Das Secret des API-Schlüssels wird in folgende ENV-Variable in der `config.ini` hinterlegt:
+
+```shell
+[Model::SMS]
+api_key = f1Qery7ShwajQzS5y7uD
+```
+
+Desweiteren sind folgende Environment Variablen für den SMS Versand von Bedeutung. Diese sind standardmäßig bereits in der `defaults.ini` enthalten und müssen nicht zwingend in der `config.ini` aufgeführt werden:
+```shell
+[Model::SMS]
+dry_run = 0
+sender_name = ClnicalSite
+```
+
 # SSL über Proxy-Server
 
-Eine SSL-Verschlüsselung mittels eines Proxy-Servers ist empfohlen und im produktiven Betrieb zwingend.
+Eine SSL-Verschlüsselung mittels eines Proxy-Servers ist empfohlen und im produktiven Betrieb zwingend. Beispielsweise kann als Proxy-Server [Traefik](https://doc.traefik.io/) verwendet werden.
 
 # Standard-Login
 
