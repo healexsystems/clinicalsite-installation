@@ -4,6 +4,7 @@ ClinicalSite von Healex GmbH ist ein Informations- und Verwaltungssystem für or
 
 ClinicalSite dient der digitalen Vernetzung aller an einer Studie beteiligten Parteien, indem die für eine Studie relevanten administrativen Daten zentral im System abgelegt werden und dort von mehreren berechtigten Personen eingesehen und bearbeitet werden können („Cooperative Peer Reviewing“).
 
+- [ClinicalSite](#clinicalsite)
 - [Systemanforderungen](#systemanforderungen)
     * [Umgebungseinrichtung](#umgebungseinrichtung)
     * [Docker-Installation](#docker-installation)
@@ -15,6 +16,7 @@ ClinicalSite dient der digitalen Vernetzung aller an einer Studie beteiligten Pa
 - [Standard-Login](#standard-login)
 - [Container-Shell](#container-shell)
 - [Anzeige von Container-Logs](#anzeige-von-container-logs)
+- [Übergabe an Key-User](#übergabe-an-key-user)
 
 # Systemanforderungen
 
@@ -188,3 +190,12 @@ docker exec -it docker Container-ID /bin/bash
 ```shell
 docker logs Container-ID
 ```
+
+# Übergabe an Key-User
+
+Voraussetzung: E-Mailversand wurde eingerichtet
+1. (Eltern-)Organisationseinheit erstellen (ohne Org.-Einheit können keine Zugänge vergeben werden)
+3. Key-User als Affilierte in der Org.-Einheit erstellen
+4. Einladungs-E-Mails an die Key-User verschicken (Zugänge anlegen)
+5. Warten bis die Key-User ihre Zugänge aktiviert haben
+6. Key-User unter '/tenant/{tenantID}/edit' als Mandanten-Administratoren hinzufügen
