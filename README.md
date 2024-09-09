@@ -82,25 +82,33 @@ services:
     container_name: clinicalsite
     init: true
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - 8080:5000
     volumes:
-      - ./config.ini:/app/config.ini:ro
-      - dbsocket:/var/run/postgresql     
+      - dbsocket:/var/run/postgresql
       - uploads:/uploads
+      - type: bind
+        source: ./config.ini
+        target: /app/config.ini
+        read_only: true
 
   db:
     image: postgres:15-alpine
     container_name: cs-db
     environment:
-      POSTGRES_DB: cs
-      POSTGRES_USER: cs
-      POSTGRES_PASSWORD: example
+      POSTGRES_USER: csrun
+      POSTGRES_PASSWORD: csrun
+    healthcheck:
+      test: psql -U csrun -d template1
+      interval: 1s
+      start_period: 10s
+      timeout: 60s
+      retries: 60
     volumes:
+      - dbsocket:/var/run/postgresql
       - db:/var/lib/postgresql/data
-      - dbsocket:/var/run/postgresql      
-      - ./init.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
 ```
 
 # Konfiguration
