@@ -13,7 +13,8 @@ ClinicalSite dient der digitalen Vernetzung aller an einer Studie beteiligten Pa
   - [Client-seitige Anforderungen](#client-seitige-anforderungen)
 - [Erste Schritte](#erste-schritte)
 - [Konfiguration](#konfiguration)
-  - [Umgebungsvariablen](#umgebungsvariablen)
+  - [ClinicalSite](#clinicalsite-1)
+  - [Datenbank](#datenbank)
   - [Zwei-Faktor-Authentifizierung](#2fa)
 - [SSL über Proxy-Server](#ssl-über-proxy-server)
 - [Standard-Login](#standard-login)
@@ -73,7 +74,6 @@ version: "3.7"
 
 volumes:
   db:
-  dbsocket:
   uploads:
 
 services:
@@ -87,34 +87,39 @@ services:
     ports:
       - 8080:5000
     volumes:
-      - dbsocket:/var/run/postgresql
       - uploads:/uploads
       - type: bind
         source: ./config.ini
         target: /app/config.ini
+        read_only: true
+      - type: bind
+        source: ./config.bash
+        target: /app/config.bash
         read_only: true
 
   db:
     image: postgres:15-alpine
     container_name: cs-db
     environment:
-      POSTGRES_USER: csrun
-      POSTGRES_PASSWORD: csrun
+      POSTGRES_PASSWORD: postgres
     healthcheck:
-      test: psql -U csrun -d template1
+      test: psql -U csrun -d clinicalsite
       interval: 1s
       start_period: 10s
       timeout: 60s
       retries: 60
     volumes:
-      - dbsocket:/var/run/postgresql
       - db:/var/lib/postgresql/data
+      - type: bind
+        source: ./init.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+        read_only: true
 ```
 
 # Konfiguration
 
-## Umgebungsvariablen
-Die Anwendung wird über die Datei `config.ini` konfiguriert.
+## ClinicalSite
+Der Service clinicalsite wird hauptsächlich über die Datei `config.ini` konfiguriert.
 
 | Umgebungsvariable          | Abschnitt    | Beschreibung | Standard-Wert | Beispiel
 |----------------------------|--------------|--------------|---------------|----------
@@ -143,7 +148,7 @@ Die Anwendung wird über die Datei `config.ini` konfiguriert.
 | sasl_username              | View::Email transport| Benutzername des E-Mail Kontos zur authentifizierung | | support@example.com
 | sasl_password              | View::Email transport| Passwort welches für die Authentifizierung benötigt wird; wird benötigt, falls <sasl_username> gesetzt ist |  | password
 
-Beispiel Template für `config.ini`:
+Beispiel Template für eine `config.ini`:
 
 ```shell
 [run]
@@ -175,6 +180,71 @@ timeout = 3
 sasl_username = support@example.com
 sasl_password = password
 ```
+
+## Datenbank
+
+Die Datenbank Konfiguration muss zueinander passend in der `config.bash`, `init.sql` und `compose.yml` vorgenommen werden. Die `init.sql` erstellt den ClinicalSite-Anwendungs-Benutzer und die Datenbank, das DB-Schema spielt die ClinicalSite Anwendung ein. 
+
+Startet der Docker Datenbank Service mit einem leeren Volume, wird einmalig die `init.sql` ausgeführt und somit eine Datenbank und ein Datenbankbenutzer mit Passwort angelegt. Der Postgres Docker Service benötigt zwingend die Umgebungsvariable `POSTGRES_PASSWORD` welche in der `compose.yml` gesetzt werden muss. Außerdem müssen die Werte aus dem compose-`healthcheck`-Abschnitt mit dem Benutzer und dem Datenbanknamen aus der `init.sql` übereinstimmen.
+
+In der Datei `config.bash` werden die Umgebungsvariablen der Anwendung ClinicalSite definiert, damit sie sich mit der Datenbank verbinden kann. Dementsprechend müssen Benutzername `$PGUSER` und Passwort `$PGPASSWORD` sowie der Datenbankname `$PGDATABASE` mit den Werten aus der `init.sql` übereinstimmen.
+
+
+### `init.sql`
+```shell
+CREATE USER "$PGUSER" PASSWORD '$PGPASSWORD';
+DROP DATABASE IF EXISTS "$PGDATABASE";
+CREATE DATABASE "$PGDATABASE" WITH
+	TEMPLATE   template0
+	OWNER      "$PGUSER"
+	ENCODING   UTF8
+	LOCALE_PROVIDER icu
+	ICU_LOCALE "de-DE"
+	LC_COLLATE "de_DE.UTF-8"
+	LC_CTYPE   "de_DE.UTF-8"
+;
+```
+
+Beispiel für eine init.sql:
+```shell
+CREATE USER "csrun" PASSWORD 'csrun';
+DROP DATABASE IF EXISTS "clinicalsite";
+CREATE DATABASE "clinicalsite" WITH
+	TEMPLATE   template0
+	OWNER      "csrun"
+	ENCODING   UTF8
+	LOCALE_PROVIDER icu
+	ICU_LOCALE "de-DE"
+	LC_COLLATE "de_DE.UTF-8"
+	LC_CTYPE   "de_DE.UTF-8"
+;
+```
+
+`config.bash`
+
+Umgebungsvariablen welche in der `config.bash` gesetzt werden können, sind [hier](https://www.postgresql.org/docs/15/libpq-envars.html) zu entnehmen:
+
+Die folgende Tabelle zeigt die gängisten Umgebungsvariablen:
+
+| Umgebungsvariable          | Beschreibung | Beispiel
+|----------------------------|--------------|----------
+| PGHOST                     |Hostadresse der Datenbank | cs-db
+| PGUSER                     |Name des Postgres Benutzers. Dieser muss mit dem Benutzer in der init.sql und dem Benutzer welcher im Datenbank-healtcheck in der compose.yml festgelegt wird, übereinstimmen| csrun
+| PGPASSWORD                 |Passwort des Postgres Benutzers welcher über `PGUSER` definiert wurde. Dieser Wert muss mit dem Wert in der init.sql übereinstimmen | csrun
+| PGDATABASE                 |Datenbankname | clinicalsite
+
+Beispiel Template für eine `config.bash`:
+```shell
+export PGHOST=cs-db
+export PGUSER=csrun
+export PGPASSWORD=csrun
+export PGDATABASE=clinicalsite
+```
+
+`compose.yml`
+| Umgebungsvariable          | Beschreibung | Beispiel
+|----------------------------|--------------|----------
+| POSTGRES_PASSWORD          |Superuser Passwort for PostgreSQL. Diese muss zwingend gesetzt werden.    | ayfwWL4kx9aNz1M
 
 ## 2FA
 
