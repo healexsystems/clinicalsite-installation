@@ -76,9 +76,10 @@ volumes:
 
 services:
   clinicalsite:
-    image: healexsystems/clinicalsite:latest
+    image: healexsystems/clinicalsite:20250527-013ab7
     container_name: clinicalsite
-    init: true
+    cap_drop:
+      - ALL
     depends_on:
       db:
         condition: service_healthy
