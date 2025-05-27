@@ -70,8 +70,6 @@ Am einfachsten lässt sich ClinicalSite über `docker compose` starten. Hierfür
 Beispiel für eine minimale Konfiguration:
 
 ```yaml
-version: "3.7"
-
 volumes:
   db:
   uploads:
