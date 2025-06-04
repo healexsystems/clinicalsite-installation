@@ -76,7 +76,7 @@ volumes:
 
 services:
   clinicalsite:
-    image: healexsystems/clinicalsite:20250527-013ab7
+    image: healexsystems/clinicalsite:20250604-013ab7
     container_name: clinicalsite
     cap_drop:
       - ALL
