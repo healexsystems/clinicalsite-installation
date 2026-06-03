@@ -16,11 +16,13 @@ ClinicalSite dient der digitalen Vernetzung aller an einer Studie beteiligten Pa
   - [ClinicalSite](#clinicalsite-1)
   - [Datenbank](#datenbank)
   - [Zwei-Faktor-Authentifizierung](#2fa)
+- [Virus-Scanner](#virus-scanner)
 - [SSL über Proxy-Server](#ssl-über-proxy-server)
 - [Standard-Login](#standard-login)
 - [Container-Shell](#container-shell)
 - [Anzeige von Container-Logs](#anzeige-von-container-logs)
 - [Übergabe an Key-User](#übergabe-an-key-user)
+- [Upgrade Notes](#upgrade-notes)
 
 # Systemanforderungen
 
@@ -64,56 +66,11 @@ Die Hardwareanforderungen sollten vom hauseigenen Betrieb überwacht und angepas
 
 Am einfachsten lässt sich ClinicalSite über `docker compose` starten. Hierfür werden folgende Services benötigt:
 
-  - clinicalsite: Applikationscontainer
+  - clinicalsite: Applikations-Container
   - db: Postgres Datenbank-Container
+  - clamav: Antivirus-Container
 
-Beispiel für eine minimale Konfiguration:
-
-```yaml
-volumes:
-  db:
-  uploads:
-
-services:
-  clinicalsite:
-    image: healexsystems/clinicalsite:20250604-013ab7
-    container_name: clinicalsite
-    cap_drop:
-      - ALL
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - 8080:5000
-    volumes:
-      - uploads:/uploads
-      - type: bind
-        source: ./config.ini
-        target: /app/config.ini
-        read_only: true
-      - type: bind
-        source: ./config.bash
-        target: /app/config.bash
-        read_only: true
-
-  db:
-    image: postgres:15-alpine
-    container_name: cs-db
-    environment:
-      POSTGRES_PASSWORD: postgres
-    healthcheck:
-      test: psql -U csrun -d clinicalsite
-      interval: 1s
-      start_period: 10s
-      timeout: 60s
-      retries: 60
-    volumes:
-      - db:/var/lib/postgresql/data
-      - type: bind
-        source: ./init.sql
-        target: /docker-entrypoint-initdb.d/init.sql
-        read_only: true
-```
+Ein Beispiel für eine minimale Konfiguration findest du in [`compose.yml`](./compose.yml).
 
 # Konfiguration
 
@@ -135,50 +92,20 @@ Der Service clinicalsite wird hauptsächlich über die Datei `config.ini` konfig
 | timeout                    | signatures   | Dauer der Gültigkeit von signierten Cookies und Links in Stunden | 72
 | api_key                    | Model::SMS   | API-Key für die SMS-API | | f1Qery7ShwajQzS5y7uD
 | dry_run                    | Model::SMS   | Entspricht dem `debug`-Parameter der SMS-Versand-API: der API-Call wird durchgeführt, simuliert den SMS-Versand aber nur.
-| sender_name                | Model::SMS   | Absendernummer bzw. -name. Max. 16 Ziffern bzw. 11 Zeichen | ClnicalSite
+| sender_name                | Model::SMS   | Absendernummer bzw. -name. Max. 11 Zeichen | ClnicalSite
 | sender                     | View::Email  | Envelope-Sender, der in vom System versandten EMails angegeben wird | support@clinicalsite.org | support@example.com
 | dir                        | uploads      | Pfad zum Upload Ordner innerhalb des Containers | /tmp | /uploads 
 | perm                       | uploads      | Ordner-Zugriffsberechtigung | | 640
+| virusscanner               | uploads      | Wenn Var. gesetzt, ist der Virusscanner aktiviert. Wert ist port ${PORT_NUMBER} ${HOSTNAME} | | port 3310 clamav
 | CLASS                      | View::Email transport| Gibt an, welches Email::Sender::Transport-Modul geladen werden soll | DevNull | SMTP
 | host                       | View::Email transport| Adresse des E-Mail Servers | | smtp.office365.com
 | ssl                        | View::Email transport| Verbindungstyp / Verschlüsselung  | | starttls
-| port                       | View::Email transport| Verbindungs-Port; Standart ist 25 für non-SSL, 465 für 'ssl', 587 für 'starttls' | 25 | 587
-| timeout                    | View::Email transport| Maximale Teit in Sekunden auf eine Serverrückmeldung  | 120 | 3
-| sasl_username              | View::Email transport| Benutzername des E-Mail Kontos zur authentifizierung | | support@example.com
+| port                       | View::Email transport| Verbindungs-Port; Standard ist 25 für non-SSL, 465 für 'ssl', 587 für 'starttls' | 25 | 587
+| timeout                    | View::Email transport| Maximale Zeit in Sekunden auf eine Serverrückmeldung  | 120 | 3
+| sasl_username              | View::Email transport| Benutzername des E-Mail Kontos zur Authentifizierung | | support@example.com
 | sasl_password              | View::Email transport| Passwort welches für die Authentifizierung benötigt wird; wird benötigt, falls <sasl_username> gesetzt ist |  | password
 
-Beispiel Template für eine `config.ini`:
-
-```shell
-[run]
-disable_template_reload = 1
-mock_proxy_host =
-
-[uploads]
-dir = /uploads
-perm = 640
-
-[app]
-instance_badge = #49b #fcfffc Docker
-title    = Healex ClinicalSite
-support  = support@example.com
-
-[run]
-use_ssl = 0
-have_reverse_proxy = 0
-
-[View::Email]
-sender = support@example.com
-
-[View::Email transport]
-CLASS   = SMTP
-host    = smtp.example.com
-ssl     = starttls
-port    = 587
-timeout = 3
-sasl_username = support@example.com
-sasl_password = password
-```
+Ein Beispiel findest du in [`config.ini`](./config.ini).
 
 ## Datenbank
 
@@ -189,7 +116,8 @@ Startet der Docker Datenbank Service mit einem leeren Volume, wird einmalig die 
 In der Datei `config.bash` werden die Umgebungsvariablen der Anwendung ClinicalSite definiert, damit sie sich mit der Datenbank verbinden kann. Dementsprechend müssen Benutzername `$PGUSER` und Passwort `$PGPASSWORD` sowie der Datenbankname `$PGDATABASE` mit den Werten aus der `init.sql` übereinstimmen.
 
 
-### `init.sql`
+`init.sql`
+
 ```shell
 CREATE USER "$PGUSER" PASSWORD '$PGPASSWORD';
 DROP DATABASE IF EXISTS "$PGDATABASE";
@@ -204,31 +132,26 @@ CREATE DATABASE "$PGDATABASE" WITH
 ;
 ```
 
-Beispiel für eine init.sql:
-```shell
-CREATE USER "csrun" PASSWORD 'csrun';
-DROP DATABASE IF EXISTS "clinicalsite";
-CREATE DATABASE "clinicalsite" WITH
-	TEMPLATE   template0
-	OWNER      "csrun"
-	ENCODING   UTF8
-	LOCALE_PROVIDER icu
-	ICU_LOCALE "de-DE"
-	LC_COLLATE "de_DE.UTF-8"
-	LC_CTYPE   "de_DE.UTF-8"
-;
-```
+Ein Beispiel findest du in [`init.sql`](./init.sql).
+
+Stellen Sie sicher, dass die Berechtigungen der init.sql Datei auf 644 (rw-r--r--) gesetzt ist:
+
+- 6 für den Besitzer: Lesen (r) + Schreiben (w) → 4 + 2 = 6
+- 4 für die Gruppe: Lesen (r)
+- 4 für alle anderen: Lesen (r)
+
+<br>
 
 `config.bash`
 
 Umgebungsvariablen welche in der `config.bash` gesetzt werden können, sind [hier](https://www.postgresql.org/docs/15/libpq-envars.html) zu entnehmen:
 
-Die folgende Tabelle zeigt die gängisten Umgebungsvariablen:
+Die folgende Tabelle zeigt die gängigsten Umgebungsvariablen:
 
 | Umgebungsvariable          | Beschreibung | Beispiel
 |----------------------------|--------------|----------
 | PGHOST                     |Hostadresse der Datenbank | cs-db
-| PGUSER                     |Name des Postgres Benutzers. Dieser muss mit dem Benutzer in der init.sql und dem Benutzer welcher im Datenbank-healtcheck in der compose.yml festgelegt wird, übereinstimmen| csrun
+| PGUSER                     |Name des Postgres Benutzers. Dieser muss mit dem Benutzer in der init.sql und dem Benutzer welcher im Datenbank-healthcheck in der compose.yml festgelegt wird, übereinstimmen| csrun
 | PGPASSWORD                 |Passwort des Postgres Benutzers welcher über `PGUSER` definiert wurde. Dieser Wert muss mit dem Wert in der init.sql übereinstimmen | csrun
 | PGDATABASE                 |Datenbankname | clinicalsite
 
@@ -243,26 +166,75 @@ export PGDATABASE=clinicalsite
 `compose.yml`
 | Umgebungsvariable          | Beschreibung | Beispiel
 |----------------------------|--------------|----------
-| POSTGRES_PASSWORD          |Superuser Passwort for PostgreSQL. Diese muss zwingend gesetzt werden.    | ayfwWL4kx9aNz1M
+| POSTGRES_PASSWORD          |Superuser Passwort für PostgreSQL. Dieses muss zwingend gesetzt werden.    | ayfwWL4kx9aNz1M
 
 ## 2FA
 
 Als Methode für eine Zwei-Faktor-Authentifizierung kann optional ein SMS Versand über [seven.io](https://www.seven.io) eingerichtet werden.
 Hierfür wird in den Entwicklereinstellungen von seven.io eine neue Anwendung und ein neuer API-Schlüssel erstellt. Dieser ermöglicht einen Zugriff auf die HTTP-API von seven.io.
 
-Das Secret des API-Schlüssels wird in folgende ENV-Variable in der `config.ini` hinterlegt:
+Das Secret des API-Schlüssels wird in folgendem Eintrag in der `config.ini` hinterlegt:
 
 ```shell
 [Model::SMS]
 api_key = f1Qery7ShwajQzS5y7uD
 ```
 
-Desweiteren sind folgende Environment Variablen für den SMS Versand von Bedeutung. Diese sind standardmäßig bereits in der `defaults.ini` enthalten und müssen nicht zwingend in der `config.ini` aufgeführt werden:
+Desweiteren sind folgende Einträge für den SMS Versand von Bedeutung. Diese sind standardmäßig bereits in der `defaults.ini` enthalten und müssen nicht zwingend in der `config.ini` aufgeführt werden:
 ```shell
 [Model::SMS]
 dry_run = 0
-sender_name = ClnicalSite
+sender_name = ClinicalSite
 ```
+
+# Virus-Scanner
+
+ClinicalSite kann hochgeladene Dateien optional automatisch auf Schadsoftware prüfen. Als Virus-Scanner wird [ClamAV](https://www.clamav.net/) verwendet, welcher als eigener Docker Service betrieben wird. Das Feature ist optional und standardmäßig deaktiviert: Wird die zugehörige Variable nicht gesetzt, ist der Virus-Scanner in ClinicalSite **nicht aktiviert** und Uploads werden ungeprüft angenommen.
+
+## Docker Service
+
+Damit der Scan durchgeführt werden kann, muss der Service `clamav` in der `compose.yml` ergänzt werden. Der Container muss dabei über ein gemeinsames Netzwerk (`clamav_network`) für den Service `clinicalsite` erreichbar sein.
+
+```yaml
+volumes:
+  clamav_db:
+
+networks:
+  clamav_network:
+    driver: bridge
+
+services:
+  clamav:
+    image: clamav/clamav:stable_base
+    container_name: cs-clamav
+    networks:
+      clamav_network:
+    environment:
+      - CLAMAV_NO_FRESHCLAMD=false
+      - FRESHCLAM_CHECKS=24
+    volumes:
+      - clamav_db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/clamdcheck.sh"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 6m
+    mem_limit: 4g
+```
+
+> **Hinweis:** ClamAV benötigt nach dem Start einige Zeit, um die Virensignaturen zu laden (siehe `start_period`). Erst danach meldet der Healthcheck den Container als `healthy`.
+
+## Aktivierung in ClinicalSite
+
+Aktiviert wird der Scan über den Eintrag `virusscanner` im Abschnitt `[uploads]` der `config.ini`. Der Wert hat das Format `port ${PORT_NUMBER} ${HOSTNAME}` und verweist auf Port und Hostname des ClamAV-Containers. Der Hostname muss dem Service- bzw. Container-Namen aus der `compose.yml` entsprechen (im Beispiel `clamav`).
+
+```ini
+[uploads]
+virusscanner = port 3310 clamav
+```
+
+Ist der Eintrag `virusscanner` nicht gesetzt, bleibt der Virus-Scanner deaktiviert – auch dann, wenn der `clamav`-Container läuft.
 
 # SSL über Proxy-Server
 
@@ -294,7 +266,60 @@ docker logs Container-ID
 
 Voraussetzung: E-Mailversand wurde eingerichtet
 1. (Eltern-)Organisationseinheit erstellen (ohne Org.-Einheit können keine Zugänge vergeben werden)
-3. Key-User als Affilierte in der Org.-Einheit erstellen
-4. Einladungs-E-Mails an die Key-User verschicken (Zugänge anlegen)
-5. Warten bis die Key-User ihre Zugänge aktiviert haben
-6. Key-User unter '/tenant/{tenantID}/edit' als Mandanten-Administratoren hinzufügen
+2. Key-User als Affiliierte in der Org.-Einheit erstellen
+3. Einladungs-E-Mails an die Key-User verschicken (Zugänge anlegen)
+4. Warten bis die Key-User ihre Zugänge aktiviert haben
+5. Key-User unter '/tenant/{tenantID}/edit' als Mandanten-Administratoren hinzufügen
+
+# Upgrade Notes
+## v20260709-48d732
+
+- ENV `virusscanner` hinzugefügt
+- Docker Service `clamav` hinzugefügt
+
+```yaml
+volumes:
+  clamav_db:
+
+services:
+  clamav:
+    image: clamav/clamav:stable_base
+    container_name: cs-clamav
+    networks:
+      clamav_network:
+    environment:
+      - CLAMAV_NO_FRESHCLAMD=false
+      - FRESHCLAM_CHECKS=24
+    volumes:
+      - clamav_db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/clamdcheck.sh"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 6m
+    mem_limit: 4g
+```
+- Docker Netzwerke hinzugefügt: 
+
+```yaml
+networks:
+  db_network:
+    driver: bridge
+  clamav_network:
+    driver: bridge 
+
+services:
+  clinicalsite:
+    networks:
+      db_network:
+      clamav_network:
+
+  db:
+    networks:
+      db_network:
+
+  clamav:
+    networks:
+      clamav_network:
+```

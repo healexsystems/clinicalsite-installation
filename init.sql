@@ -1,0 +1,11 @@
+CREATE USER "csrun" PASSWORD 'csrun';
+DROP DATABASE IF EXISTS "clinicalsite";
+CREATE DATABASE "clinicalsite" WITH
+	TEMPLATE   template0
+	OWNER      "csrun"
+	ENCODING   UTF8
+	LOCALE_PROVIDER icu
+	ICU_LOCALE "de-DE"
+	LC_COLLATE "de_DE.UTF-8"
+	LC_CTYPE   "de_DE.UTF-8"
+;

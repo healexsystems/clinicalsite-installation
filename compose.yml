@@ -1,0 +1,73 @@
+volumes:
+  db:
+  uploads:
+  clamav_db:
+
+networks:
+  db_network:
+    driver: bridge
+  clamav_network:
+    driver: bridge
+
+services:
+  clinicalsite:
+    image: healexsystems/clinicalsite:latest
+    container_name: clinicalsite
+    networks:
+      db_network:
+      clamav_network:
+    cap_drop:
+      - ALL
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - 8080:5000
+    volumes:
+      - uploads:/uploads
+      - type: bind
+        source: ./config.ini
+        target: /app/config.ini
+        read_only: true
+      - type: bind
+        source: ./config.bash
+        target: /app/config.bash
+        read_only: true
+
+  db:
+    image: postgres:15-alpine
+    container_name: cs-db
+    networks:
+      db_network:
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db:/var/lib/postgresql/data
+      - type: bind
+        source: ./init.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+        read_only: true
+    healthcheck:
+      test: psql -U csrun -d clinicalsite
+      interval: 1s
+      start_period: 10s
+      timeout: 60s
+      retries: 60
+
+  clamav:
+    image: clamav/clamav:stable_base
+    container_name: cs-clamav
+    networks:
+      clamav_network:
+    environment:
+      - CLAMAV_NO_FRESHCLAMD=false
+      - FRESHCLAM_CHECKS=24
+    volumes:
+      - clamav_db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/clamdcheck.sh"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 6m
+    mem_limit: 4g 
